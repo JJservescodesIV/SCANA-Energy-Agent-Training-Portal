@@ -1,0 +1,2561 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SCANA Energy Agent Training Portal - Master Natural Gas Conversations</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --secondary-gradient: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            --success-gradient: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            --warning-gradient: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+            --shadow-light: 0 5px 15px rgba(0,0,0,0.1);
+            --shadow-medium: 0 10px 30px rgba(0,0,0,0.15);
+            --shadow-heavy: 0 20px 40px rgba(0,0,0,0.2);
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            position: relative;
+        }
+
+        /* Loading Screen */
+        .loading-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100vh;
+            background: var(--primary-gradient);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+            transition: opacity 0.5s ease;
+        }
+
+        .loading-content {
+            text-align: center;
+            color: white;
+        }
+
+        .loading-icon {
+            font-size: 4em;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.1); opacity: 0.8; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        /* Navigation Bar */
+        .nav-bar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            background: rgba(255,255,255,0.95);
+            backdrop-filter: blur(10px);
+            box-shadow: var(--shadow-light);
+            z-index: 100;
+            padding: 15px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .nav-logo {
+            font-size: 1.5em;
+            font-weight: bold;
+            background: var(--primary-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .nav-actions {
+            display: flex;
+            gap: 20px;
+            align-items: center;
+        }
+
+        .search-box {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+
+        .search-input {
+            padding: 8px 15px 8px 35px;
+            border: 2px solid #e0e0e0;
+            border-radius: 25px;
+            width: 250px;
+            transition: all 0.3s ease;
+        }
+
+        .search-input:focus {
+            outline: none;
+            border-color: #667eea;
+            width: 300px;
+        }
+
+        .search-icon {
+            position: absolute;
+            left: 10px;
+            color: #666;
+        }
+
+        .progress-tracker {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: #f0f4f8;
+            padding: 8px 15px;
+            border-radius: 20px;
+        }
+
+        .progress-bar {
+            width: 100px;
+            height: 6px;
+            background: #e0e0e0;
+            border-radius: 3px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: var(--success-gradient);
+            width: 0%;
+            transition: width 0.5s ease;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 80px auto 0;
+            background: white;
+            border-radius: 20px;
+            box-shadow: var(--shadow-heavy);
+            overflow: hidden;
+            animation: slideUp 0.5s ease;
+        }
+
+        @keyframes slideUp {
+            from { transform: translateY(20px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        .header {
+            background: var(--primary-gradient);
+            color: white;
+            padding: 40px;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .header::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+            animation: rotate 20s linear infinite;
+        }
+
+        @keyframes rotate {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        .header h1 {
+            font-size: 3em;
+            margin-bottom: 15px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .header p {
+            font-size: 1.3em;
+            opacity: 0.9;
+            position: relative;
+            z-index: 1;
+        }
+
+        /* Quick Stats Dashboard */
+        .stats-dashboard {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            padding: 30px;
+            background: #f8f9ff;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: var(--shadow-light);
+            text-align: center;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+            box-shadow: var(--shadow-medium);
+        }
+
+        .stat-number {
+            font-size: 2.5em;
+            font-weight: bold;
+            background: var(--primary-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .stat-label {
+            color: #666;
+            margin-top: 5px;
+        }
+
+        /* Main Content */
+        .main-content {
+            padding: 40px;
+        }
+
+        /* Section Styles */
+        .section {
+            margin-bottom: 40px;
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: var(--shadow-light);
+            transition: all 0.3s ease;
+            background: white;
+        }
+
+        .section:hover {
+            box-shadow: var(--shadow-medium);
+        }
+
+        .section-header {
+            background: var(--primary-gradient);
+            color: white;
+            padding: 25px;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .section-header::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: rgba(255,255,255,0.2);
+            transition: left 0.3s ease;
+        }
+
+        .section-header:hover::after {
+            left: 100%;
+        }
+
+        .section-header h2 {
+            font-size: 1.6em;
+            display: flex;
+            align-items: center;
+            z-index: 1;
+            position: relative;
+        }
+
+        .section-icon {
+            font-size: 1.8em;
+            margin-right: 15px;
+            animation: iconBounce 2s ease infinite;
+        }
+
+        @keyframes iconBounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-5px); }
+        }
+
+        .expand-icon {
+            font-size: 1.5em;
+            transition: transform 0.3s ease;
+            z-index: 1;
+            position: relative;
+        }
+
+        .section-content {
+            background: #f8f9ff;
+            padding: 0;
+            max-height: 0;
+            overflow: hidden;
+            transition: all 0.5s ease;
+        }
+
+        .section.active .section-content {
+            max-height: 2000px;
+            padding: 30px;
+        }
+
+        .section.active .expand-icon {
+            transform: rotate(180deg);
+        }
+
+        /* Journey Visualization */
+        .journey-container {
+            position: relative;
+            padding: 40px 20px;
+            background: linear-gradient(to right, #f8f9ff 0%, #ffffff 100%);
+            border-radius: 15px;
+            margin-bottom: 30px;
+        }
+
+        .journey-path {
+            position: absolute;
+            top: 50%;
+            left: 10%;
+            right: 10%;
+            height: 4px;
+            background: linear-gradient(to right, #667eea 0%, #764ba2 100%);
+            z-index: 1;
+        }
+
+        .flow-step {
+            position: relative;
+            z-index: 2;
+            background: white;
+            border-radius: 15px;
+            box-shadow: var(--shadow-light);
+            padding: 25px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: 3px solid transparent;
+        }
+
+        .flow-step:hover {
+            transform: translateY(-10px) scale(1.05);
+            box-shadow: var(--shadow-medium);
+            border-color: #667eea;
+        }
+
+        .flow-step-icon {
+            font-size: 3.5em;
+            margin-bottom: 15px;
+            animation: float 3s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+
+        .flow-step h3 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 1.2em;
+        }
+
+        .flow-step p {
+            color: #666;
+            font-size: 0.9em;
+        }
+
+        .journey-flow {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 20px;
+            position: relative;
+        }
+
+        /* Interactive Rate Comparison */
+        .comparison {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+
+        .rate-option {
+            padding: 30px;
+            border-radius: 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.4s ease;
+            position: relative;
+            overflow: hidden;
+            color: white;
+        }
+
+        .rate-option::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(255,255,255,0.3) 0%, transparent 70%);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .rate-option:hover::before {
+            opacity: 1;
+            animation: ripple 0.6s ease;
+        }
+
+        @keyframes ripple {
+            from { transform: scale(0); }
+            to { transform: scale(1); }
+        }
+
+        .rate-option:hover {
+            transform: translateY(-5px) scale(1.02);
+        }
+
+        .fixed-rate {
+            background: var(--success-gradient);
+        }
+
+        .variable-rate {
+            background: var(--warning-gradient);
+        }
+
+        .rate-icon {
+            font-size: 4.5em;
+            margin-bottom: 20px;
+            animation: pulse 2s ease infinite;
+        }
+
+        .rate-pros-cons {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-top: 20px;
+            text-align: left;
+        }
+
+        .pros, .cons {
+            background: rgba(255,255,255,0.2);
+            padding: 15px;
+            border-radius: 10px;
+        }
+
+        /* Enhanced Glossary */
+        .glossary {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 25px;
+            margin-bottom: 30px;
+        }
+
+        .term {
+            background: white;
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: var(--shadow-light);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+            border: 2px solid transparent;
+        }
+
+        .term::after {
+            content: '→';
+            position: absolute;
+            right: 20px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 1.5em;
+            opacity: 0;
+            transition: all 0.3s ease;
+        }
+
+        .term:hover {
+            transform: translateY(-5px);
+            box-shadow: var(--shadow-medium);
+            border-color: #667eea;
+        }
+
+        .term:hover::after {
+            opacity: 1;
+            right: 15px;
+        }
+
+        .term-icon {
+            font-size: 3em;
+            margin-bottom: 15px;
+            background: var(--primary-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        /* Interactive Q&A */
+        .qa-item {
+            background: white;
+            margin-bottom: 20px;
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: var(--shadow-light);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: 2px solid transparent;
+        }
+
+        .qa-item:hover {
+            box-shadow: var(--shadow-medium);
+            border-color: #667eea;
+        }
+
+        .qa-question {
+            padding: 25px;
+            background: var(--primary-gradient);
+            color: white;
+            font-weight: bold;
+            font-size: 1.1em;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .qa-difficulty {
+            display: flex;
+            gap: 3px;
+        }
+
+        .difficulty-star {
+            font-size: 0.8em;
+            color: gold;
+        }
+
+        /* Best Practices Grid */
+        .best-practices {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 25px;
+        }
+
+        .practice {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            text-align: center;
+            box-shadow: var(--shadow-light);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .practice::before {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 5px;
+            background: var(--primary-gradient);
+            transform: scaleX(0);
+            transition: transform 0.3s ease;
+        }
+
+        .practice:hover {
+            transform: translateY(-5px);
+            box-shadow: var(--shadow-medium);
+        }
+
+        .practice:hover::before {
+            transform: scaleX(1);
+        }
+
+        .practice-icon {
+            font-size: 3.5em;
+            margin-bottom: 20px;
+            transition: transform 0.3s ease;
+        }
+
+        .practice:hover .practice-icon {
+            transform: scale(1.1) rotate(5deg);
+        }
+
+        /* Interactive Demo Section */
+        .demo-section {
+            background: linear-gradient(135deg, #f8f9ff 0%, #ffffff 100%);
+            padding: 30px;
+            border-radius: 15px;
+            margin-bottom: 30px;
+        }
+
+        .demo-controls {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .demo-button {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 25px;
+            background: var(--primary-gradient);
+            color: white;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: bold;
+        }
+
+        .demo-button:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-light);
+        }
+
+        .demo-display {
+            background: white;
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: var(--shadow-light);
+            min-height: 200px;
+        }
+
+        /* Price Calculator */
+        .calculator {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: var(--shadow-light);
+        }
+
+        .calc-input-group {
+            margin-bottom: 20px;
+        }
+
+        .calc-input-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+            color: #333;
+        }
+
+        .calc-input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 1em;
+            transition: border-color 0.3s ease;
+        }
+
+        .calc-input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .calc-result {
+            background: var(--primary-gradient);
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin-top: 20px;
+            text-align: center;
+        }
+
+        /* Quick Tips Carousel */
+        .tips-carousel {
+            position: relative;
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: var(--shadow-light);
+            overflow: hidden;
+        }
+
+        .tip-slide {
+            display: none;
+            animation: slideIn 0.5s ease;
+        }
+
+        .tip-slide.active {
+            display: block;
+        }
+
+        @keyframes slideIn {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+
+        .carousel-controls {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .carousel-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: #e0e0e0;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .carousel-dot.active {
+            background: #667eea;
+            transform: scale(1.2);
+        }
+
+        /* Flyout Panel Enhanced */
+        .flyout-panel {
+            position: fixed;
+            top: 0;
+            right: -500px;
+            width: 500px;
+            height: 100vh;
+            background: white;
+            box-shadow: -10px 0 30px rgba(0,0,0,0.3);
+            transition: right 0.4s ease;
+            z-index: 1000;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .flyout-panel.active {
+            right: 0;
+        }
+
+        .flyout-header {
+            background: var(--primary-gradient);
+            color: white;
+            padding: 25px;
+            position: sticky;
+            top: 0;
+            z-index: 1001;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .flyout-content {
+            padding: 30px;
+            flex: 1;
+            overflow-y: auto;
+        }
+
+        .close-flyout {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: rgba(255,255,255,0.2);
+            border: none;
+            color: white;
+            font-size: 1.8em;
+            cursor: pointer;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+        }
+
+        .close-flyout:hover {
+            background: rgba(255,255,255,0.3);
+            transform: rotate(90deg);
+        }
+
+        /* Enhanced Content Boxes */
+        .script-box {
+            background: linear-gradient(135deg, #e6f3ff 0%, #f0f7ff 100%);
+            border-left: 5px solid #667eea;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 10px;
+            position: relative;
+            box-shadow: var(--shadow-light);
+        }
+
+        .script-box::before {
+            content: '💬';
+            position: absolute;
+            top: -10px;
+            left: 20px;
+            background: white;
+            padding: 5px 10px;
+            border-radius: 20px;
+            font-size: 1.2em;
+        }
+
+        .tip-box {
+            background: linear-gradient(135deg, #fff7e6 0%, #fffaf0 100%);
+            border-left: 5px solid #ff9800;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 10px;
+            position: relative;
+            box-shadow: var(--shadow-light);
+        }
+
+        .tip-box::before {
+            content: '💡';
+            position: absolute;
+            top: -10px;
+            left: 20px;
+            background: white;
+            padding: 5px 10px;
+            border-radius: 20px;
+            font-size: 1.2em;
+        }
+
+        .warning-box {
+            background: linear-gradient(135deg, #ffe6e6 0%, #fff0f0 100%);
+            border-left: 5px solid #f44336;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 10px;
+            position: relative;
+            box-shadow: var(--shadow-light);
+        }
+
+        .warning-box::before {
+            content: '⚠️';
+            position: absolute;
+            top: -10px;
+            left: 20px;
+            background: white;
+            padding: 5px 10px;
+            border-radius: 20px;
+            font-size: 1.2em;
+        }
+
+        /* Interactive Charts */
+        .chart-container {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: var(--shadow-light);
+            margin-bottom: 30px;
+        }
+
+        .mini-chart {
+            height: 200px;
+            background: linear-gradient(to top, #f0f7ff 0%, transparent 100%);
+            border-radius: 10px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .chart-line {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 60%;
+            background: var(--primary-gradient);
+            clip-path: polygon(0 100%, 20% 80%, 40% 60%, 60% 70%, 80% 40%, 100% 50%, 100% 100%, 0 100%);
+            animation: chartGrow 2s ease;
+        }
+
+        @keyframes chartGrow {
+            from { transform: scaleY(0); }
+            to { transform: scaleY(1); }
+        }
+
+        /* Favorites System */
+        .favorite-button {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: white;
+            border: none;
+            width: 35px;
+            height: 35px;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: var(--shadow-light);
+            transition: all 0.3s ease;
+        }
+
+        .favorite-button:hover {
+            transform: scale(1.1);
+        }
+
+        .favorite-button.active {
+            background: #ff5252;
+            color: white;
+        }
+
+        /* Knowledge Check Quiz */
+        .quiz-container {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: var(--shadow-light);
+            margin-bottom: 30px;
+        }
+
+        .quiz-question {
+            font-size: 1.2em;
+            margin-bottom: 20px;
+            font-weight: bold;
+        }
+
+        .quiz-options {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .quiz-option {
+            padding: 15px;
+            background: #f8f9ff;
+            border: 2px solid transparent;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .quiz-option:hover {
+            border-color: #667eea;
+            transform: translateX(5px);
+        }
+
+        .quiz-option.correct {
+            background: #e8f5e9;
+            border-color: #4caf50;
+        }
+
+        .quiz-option.incorrect {
+            background: #ffebee;
+            border-color: #f44336;
+        }
+
+        /* Overlay Enhanced */
+        .overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.7);
+            backdrop-filter: blur(5px);
+            display: none;
+            z-index: 999;
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .overlay.active {
+            display: block;
+        }
+
+        /* Achievement Badges */
+        .achievement-popup {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: white;
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: var(--shadow-heavy);
+            display: none;
+            animation: slideInRight 0.5s ease;
+            z-index: 1100;
+        }
+
+        @keyframes slideInRight {
+            from { transform: translateX(100%); }
+            to { transform: translateX(0); }
+        }
+
+        .achievement-popup.show {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .achievement-icon {
+            font-size: 3em;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .flyout-panel {
+                width: 100%;
+                right: -100%;
+            }
+            
+            .comparison {
+                grid-template-columns: 1fr;
+            }
+
+            .nav-actions {
+                flex-direction: column;
+                gap: 10px;
+            }
+
+            .search-input {
+                width: 150px;
+            }
+
+            .header h1 {
+                font-size: 2em;
+            }
+
+            .stats-dashboard {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+
+        /* Print Styles */
+        @media print {
+            .nav-bar, .flyout-panel, .overlay, .loading-screen {
+                display: none !important;
+            }
+
+            .section-content {
+                max-height: none !important;
+                padding: 20px !important;
+            }
+
+            .section {
+                page-break-inside: avoid;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Loading Screen -->
+    <div class="loading-screen" id="loading-screen">
+        <div class="loading-content">
+            <div class="loading-icon">🔥</div>
+            <h2>Loading Your Training Portal...</h2>
+        </div>
+    </div>
+
+    <!-- Navigation Bar -->
+    <div class="nav-bar">
+        <div class="nav-logo">
+            🔥 SCANA Energy Training Portal
+        </div>
+        <div class="nav-actions">
+            <div class="search-box">
+                <span class="search-icon">🔍</span>
+                <input type="text" class="search-input" placeholder="Search topics..." id="search-input">
+            </div>
+            <div class="progress-tracker">
+                <span>Progress:</span>
+                <div class="progress-bar">
+                    <div class="progress-fill" id="progress-fill"></div>
+                </div>
+                <span id="progress-percent">0%</span>
+            </div>
+            <button class="demo-button" onclick="showFavorites()">⭐ My Favorites</button>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="header">
+            <h1>🔥 Natural Gas Pricing Mastery Guide</h1>
+            <p>Your Complete Resource for Customer Conversations & Market Understanding</p>
+        </div>
+
+        <!-- Quick Stats Dashboard -->
+        <div class="stats-dashboard">
+            <div class="stat-card" onclick="openFlyout('current-prices')">
+                <div class="stat-number">$3.45</div>
+                <div class="stat-label">Current Henry Hub Price</div>
+            </div>
+            <div class="stat-card" onclick="openFlyout('market-trend')">
+                <div class="stat-number">↑ 12%</div>
+                <div class="stat-label">Monthly Change</div>
+            </div>
+            <div class="stat-card" onclick="openFlyout('storage-info')">
+                <div class="stat-number">2.8 TCF</div>
+                <div class="stat-label">US Storage Levels</div>
+            </div>
+            <div class="stat-card" onclick="openFlyout('customer-saves')">
+                <div class="stat-number">$247</div>
+                <div class="stat-label">Avg Customer Savings</div>
+            </div>
+        </div>
+
+        <div class="main-content">
+            <!-- Quick Tips Carousel -->
+            <div class="tips-carousel">
+                <h3>💡 Quick Tip of the Day</h3>
+                <div class="tip-slide active">
+                    <p><strong>Pro Tip:</strong> When explaining price increases, start with empathy: "I understand this is frustrating, and I'm here to help you understand what's happening and explore your options."</p>
+                </div>
+                <div class="tip-slide">
+                    <p><strong>Did You Know?</strong> Fixed-rate customers save an average of $150-300 per year during volatile winter months compared to variable rates.</p>
+                </div>
+                <div class="tip-slide">
+                    <p><strong>Customer Success:</strong> Use the "Feel, Felt, Found" technique: "I understand how you feel. Other customers have felt the same way. What they found helpful was..."</p>
+                </div>
+                <div class="carousel-controls">
+                    <span class="carousel-dot active" onclick="showSlide(0)"></span>
+                    <span class="carousel-dot" onclick="showSlide(1)"></span>
+                    <span class="carousel-dot" onclick="showSlide(2)"></span>
+                </div>
+            </div>
+
+            <!-- Section 1: Journey of Natural Gas -->
+            <div class="section">
+                <div class="section-header" onclick="toggleSection(this)">
+                    <h2><span class="section-icon">⛽</span>The Journey of Natural Gas</h2>
+                    <span class="expand-icon">▼</span>
+                    <button class="favorite-button" onclick="toggleFavorite(this, 'journey')">⭐</button>
+                </div>
+                <div class="section-content">
+                    <div class="journey-container">
+                        <div class="journey-path"></div>
+                        <div class="journey-flow">
+                            <div class="flow-step" onclick="openFlyout('gas-production')">
+                                <div class="flow-step-icon">🏭</div>
+                                <h3>Production</h3>
+                                <p>Extraction & Processing</p>
+                                <small>Click to learn more</small>
+                            </div>
+                            <div class="flow-step" onclick="openFlyout('wholesale-market')">
+                                <div class="flow-step-icon">📈</div>
+                                <h3>Trading Hub</h3>
+                                <p>Market Dynamics</p>
+                                <small>Click to learn more</small>
+                            </div>
+                            <div class="flow-step" onclick="openFlyout('transportation')">
+                                <div class="flow-step-icon">🚛</div>
+                                <h3>Transportation</h3>
+                                <p>Pipeline Networks</p>
+                                <small>Click to learn more</small>
+                            </div>
+                            <div class="flow-step" onclick="openFlyout('storage')">
+                                <div class="flow-step-icon">⛽</div>
+                                <h3>Storage</h3>
+                                <p>Strategic Reserves</p>
+                                <small>Click to learn more</small>
+                            </div>
+                            <div class="flow-step" onclick="openFlyout('delivery')">
+                                <div class="flow-step-icon">🏠</div>
+                                <h3>Your Home</h3>
+                                <p>Final Delivery</p>
+                                <small>Click to learn more</small>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Interactive Price Breakdown -->
+                    <div class="chart-container">
+                        <h3>Understanding Your Customer's Bill</h3>
+                        <div class="mini-chart">
+                            <div class="chart-line"></div>
+                        </div>
+                        <p style="margin-top: 15px;">Interactive breakdown showing how wholesale prices translate to customer bills.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Section 2: Rate Plans Deep Dive -->
+            <div class="section">
+                <div class="section-header" onclick="toggleSection(this)">
+                    <h2><span class="section-icon">⚖️</span>Rate Plans Mastery</h2>
+                    <span class="expand-icon">▼</span>
+                    <button class="favorite-button" onclick="toggleFavorite(this, 'rates')">⭐</button>
+                </div>
+                <div class="section-content">
+                    <div class="comparison">
+                        <div class="rate-option fixed-rate" onclick="openFlyout('fixed-rate-advanced')">
+                            <div class="rate-icon">🔒</div>
+                            <h3>Fixed-Rate Plan</h3>
+                            <p>Stability & Predictability</p>
+                            <div class="rate-pros-cons">
+                                <div class="pros">
+                                    <strong>✅ Pros:</strong>
+                                    <ul>
+                                        <li>Budget certainty</li>
+                                        <li>Protection from spikes</li>
+                                        <li>Peace of mind</li>
+                                    </ul>
+                                </div>
+                                <div class="cons">
+                                    <strong>❌ Cons:</strong>
+                                    <ul>
+                                        <li>May miss low prices</li>
+                                        <li>Contract commitment</li>
+                                        <li>Early termination fees</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="rate-option variable-rate" onclick="openFlyout('variable-rate-advanced')">
+                            <div class="rate-icon">📊</div>
+                            <h3>Variable-Rate Plan</h3>
+                            <p>Market-Based Flexibility</p>
+                            <div class="rate-pros-cons">
+                                <div class="pros">
+                                    <strong>✅ Pros:</strong>
+                                    <ul>
+                                        <li>Benefit from dips</li>
+                                        <li>No commitment</li>
+                                        <li>Switch anytime</li>
+                                    </ul>
+                                </div>
+                                <div class="cons">
+                                    <strong>❌ Cons:</strong>
+                                    <ul>
+                                        <li>Bill uncertainty</li>
+                                        <li>Winter price spikes</li>
+                                        <li>Budget challenges</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Rate Calculator -->
+                    <div class="calculator">
+                        <h3>💰 Customer Savings Calculator</h3>
+                        <div class="calc-input-group">
+                            <label>Monthly Usage (therms):</label>
+                            <input type="number" class="calc-input" id="usage" value="100">
+                        </div>
+                        <div class="calc-input-group">
+                            <label>Current Rate ($/therm):</label>
+                            <input type="number" class="calc-input" id="current-rate" value="0.85" step="0.01">
+                        </div>
+                        <div class="calc-input-group">
+                            <label>Proposed Fixed Rate ($/therm):</label>
+                            <input type="number" class="calc-input" id="fixed-rate" value="0.75" step="0.01">
+                        </div>
+                        <button class="demo-button" onclick="calculateSavings()">Calculate Potential Savings</button>
+                        <div class="calc-result" id="calc-result" style="display: none;">
+                            <h4>Estimated Annual Savings: <span id="savings-amount">$0</span></h4>
+                            <p>Based on current usage patterns</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Section 3: Market Intelligence -->
+            <div class="section">
+                <div class="section-header" onclick="toggleSection(this)">
+                    <h2><span class="section-icon">📚</span>Market Intelligence & Terminology</h2>
+                    <span class="expand-icon">▼</span>
+                    <button class="favorite-button" onclick="toggleFavorite(this, 'terms')">⭐</button>
+                </div>
+                <div class="section-content">
+                    <div class="glossary">
+                        <div class="term" onclick="openFlyout('henry-hub-advanced')">
+                            <div class="term-icon">📊</div>
+                            <h3>Henry Hub Price</h3>
+                            <p>North American benchmark</p>
+                            <small>Master this concept →</small>
+                        </div>
+                        <div class="term" onclick="openFlyout('lng-global')">
+                            <div class="term-icon">🚢</div>
+                            <h3>LNG & Global Markets</h3>
+                            <p>International price impacts</p>
+                            <small>Understand connections →</small>
+                        </div>
+                        <div class="term" onclick="openFlyout('basis-differential')">
+                            <div class="term-icon">📍</div>
+                            <h3>Basis Differential</h3>
+                            <p>Regional price variations</p>
+                            <small>Local factors explained →</small>
+                        </div>
+                        <div class="term" onclick="openFlyout('weather-impact')">
+                            <div class="term-icon">🌡️</div>
+                            <h3>Weather & Demand</h3>
+                            <p>Seasonal price drivers</p>
+                            <small>Forecast impacts →</small>
+                        </div>
+                        <div class="term" onclick="openFlyout('storage-economics')">
+                            <div class="term-icon">📦</div>
+                            <h3>Storage Economics</h3>
+                            <p>Inventory & pricing</p>
+                            <small>Supply dynamics →</small>
+                        </div>
+                        <div class="term" onclick="openFlyout('futures-market')">
+                            <div class="term-icon">📈</div>
+                            <h3>Futures & Hedging</h3>
+                            <p>Price risk management</p>
+                            <small>Advanced concepts →</small>
+                        </div>
+                    </div>
+
+                    <!-- Market Update Section -->
+                    <div class="demo-section">
+                        <h3>🔄 Live Market Insights</h3>
+                        <div class="demo-controls">
+                            <button class="demo-button" onclick="showMarketUpdate('today')">Today's Market</button>
+                            <button class="demo-button" onclick="showMarketUpdate('week')">Weekly Trend</button>
+                            <button class="demo-button" onclick="showMarketUpdate('outlook')">30-Day Outlook</button>
+                        </div>
+                        <div class="demo-display" id="market-display">
+                            <p>Select a timeframe to view market insights...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Section 4: Customer Scenarios Mastery -->
+            <div class="section">
+                <div class="section-header" onclick="toggleSection(this)">
+                    <h2><span class="section-icon">❓</span>Customer Conversation Mastery</h2>
+                    <span class="expand-icon">▼</span>
+                    <button class="favorite-button" onclick="toggleFavorite(this, 'scenarios')">⭐</button>
+                </div>
+                <div class="section-content">
+                    <!-- Scenario Simulator -->
+                    <div class="demo-section">
+                        <h3>🎭 Practice Scenario Simulator</h3>
+                        <div class="demo-controls">
+                            <button class="demo-button" onclick="startScenario('angry')">Angry Customer</button>
+                            <button class="demo-button" onclick="startScenario('confused')">Confused Customer</button>
+                            <button class="demo-button" onclick="startScenario('shopping')">Price Shopping</button>
+                            <button class="demo-button" onclick="startScenario('technical')">Technical Questions</button>
+                        </div>
+                        <div class="demo-display" id="scenario-display">
+                            <p>Select a scenario to practice your response...</p>
+                        </div>
+                    </div>
+
+                    <div class="qa-item" onclick="openFlyout('high-bills-complete')">
+                        <div class="qa-question">
+                            <span>"Gas prices are low in the news. Why is my bill still high?"</span>
+                            <div class="qa-difficulty">
+                                <span class="difficulty-star">⭐</span>
+                                <span class="difficulty-star">⭐</span>
+                                <span class="difficulty-star">⭐</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="qa-item" onclick="openFlyout('competitor-comparison')">
+                        <div class="qa-question">
+                            <span>"Why is SCANA Energy more expensive than XYZ company?"</span>
+                            <div class="qa-difficulty">
+                                <span class="difficulty-star">⭐</span>
+                                <span class="difficulty-star">⭐</span>
+                                <span class="difficulty-star">⭐</span>
+                                <span class="difficulty-star">⭐</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="qa-item" onclick="openFlyout('global-impact')">
+                        <div class="qa-question">
+                            <span>"How does the war in Ukraine affect my gas bill in Georgia?"</span>
+                            <div class="qa-difficulty">
+                                <span class="difficulty-star">⭐</span>
+                                <span class="difficulty-star">⭐</span>
+                                <span class="difficulty-star">⭐</span>
+                                <span class="difficulty-star">⭐</span>
+                                <span class="difficulty-star">⭐</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="qa-item" onclick="openFlyout('winter-spike')">
+                        <div class="qa-question">
+                            <span>"My bill doubled this winter! This is outrageous!"</span>
+                            <div class="qa-difficulty">
+                                <span class="difficulty-star">⭐</span>
+                                <span class="difficulty-star">⭐</span>
+                                <span class="difficulty-star">⭐</span>
+                                <span class="difficulty-star">⭐</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="qa-item" onclick="openFlyout('switch-threat')">
+                        <div class="qa-question">
+                            <span>"I'm thinking about switching to another provider..."</span>
+                            <div class="qa-difficulty">
+                                <span class="difficulty-star">⭐</span>
+                                <span class="difficulty-star">⭐</span>
+                                <span class="difficulty-star">⭐</span>
+                                <span class="difficulty-star">⭐</span>
+                                <span class="difficulty-star">⭐</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Section 5: Advanced Techniques -->
+            <div class="section">
+                <div class="section-header" onclick="toggleSection(this)">
+                    <h2><span class="section-icon">⭐</span>Elite Agent Techniques</h2>
+                    <span class="expand-icon">▼</span>
+                    <button class="favorite-button" onclick="toggleFavorite(this, 'techniques')">⭐</button>
+                </div>
+                <div class="section-content">
+                    <div class="best-practices">
+                        <div class="practice" onclick="openFlyout('empathy-advanced')">
+                            <div class="practice-icon">❤️</div>
+                            <h3>Emotional Intelligence</h3>
+                            <p>Master empathetic responses</p>
+                        </div>
+                        <div class="practice" onclick="openFlyout('objection-handling')">
+                            <div class="practice-icon">🛡️</div>
+                            <h3>Objection Handling</h3>
+                            <p>Turn concerns into opportunities</p>
+                        </div>
+                        <div class="practice" onclick="openFlyout('value-building')">
+                            <div class="practice-icon">🏆</div>
+                            <h3>Value Building</h3>
+                            <p>Highlight SCANA advantages</p>
+                        </div>
+                        <div class="practice" onclick="openFlyout('closing-techniques')">
+                            <div class="practice-icon">🎯</div>
+                            <h3>Closing Techniques</h3>
+                            <p>Secure customer commitment</p>
+                        </div>
+                        <div class="practice" onclick="openFlyout('retention-strategies')">
+                            <div class="practice-icon">🔄</div>
+                            <h3>Retention Mastery</h3>
+                            <p>Keep customers long-term</p>
+                        </div>
+                        <div class="practice" onclick="openFlyout('upselling-tips')">
+                            <div class="practice-icon">📈</div>
+                            <h3>Upselling Skills</h3>
+                            <p>Maximize customer value</p>
+                        </div>
+                    </div>
+
+                    <!-- Knowledge Check Quiz -->
+                    <div class="quiz-container">
+                        <h3>🧠 Test Your Knowledge</h3>
+                        <div class="quiz-question">
+                            A customer says: "I heard on the news that gas prices dropped 20%. Why didn't my bill go down?"
+                        </div>
+                        <div class="quiz-options">
+                            <div class="quiz-option" onclick="checkAnswer(this, false)">
+                                "The news is often wrong about gas prices."
+                            </div>
+                            <div class="quiz-option" onclick="checkAnswer(this, true)">
+                                "The news reports wholesale prices, but your bill includes transportation, storage, and delivery costs that don't change as much."
+                            </div>
+                            <div class="quiz-option" onclick="checkAnswer(this, false)">
+                                "Gas companies keep the savings when prices drop."
+                            </div>
+                            <div class="quiz-option" onclick="checkAnswer(this, false)">
+                                "Your meter might be reading incorrectly."
+                            </div>
+                        </div>
+                        <button class="demo-button" onclick="nextQuestion()" style="margin-top: 20px; display: none;" id="next-question">Next Question →</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Emergency Response Section -->
+            <div class="section">
+                <div class="section-header" onclick="toggleSection(this)">
+                    <h2><span class="section-icon">🚨</span>Crisis Management & Escalations</h2>
+                    <span class="expand-icon">▼</span>
+                    <button class="favorite-button" onclick="toggleFavorite(this, 'crisis')">⭐</button>
+                </div>
+                <div class="section-content">
+                    <div class="warning-box">
+                        <h4>When to Escalate Immediately:</h4>
+                        <ul>
+                            <li>Threats of legal action</li>
+                            <li>Media involvement mentioned</li>
+                            <li>Discrimination claims</li>
+                            <li>Safety concerns</li>
+                            <li>Extreme financial hardship</li>
+                        </ul>
+                    </div>
+
+                    <div class="demo-section">
+                        <h3>🔥 Handle Difficult Situations</h3>
+                        <div class="demo-controls">
+                            <button class="demo-button" onclick="openFlyout('legal-threat')">Legal Threats</button>
+                            <button class="demo-button" onclick="openFlyout('media-threat')">Media Threats</button>
+                            <button class="demo-button" onclick="openFlyout('hardship-case')">Financial Hardship</button>
+                            <button class="demo-button" onclick="openFlyout('safety-concern')">Safety Issues</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Overlay -->
+    <div class="overlay" onclick="closeFlyout()"></div>
+
+    <!-- Enhanced Flyout Panel -->
+    <div class="flyout-panel" id="flyout-panel">
+        <div class="flyout-header">
+            <h2 id="flyout-title">Information Panel</h2>
+            <button class="close-flyout" onclick="closeFlyout()">×</button>
+        </div>
+        <div class="flyout-content" id="flyout-content">
+            <!-- Dynamic content loaded here -->
+        </div>
+    </div>
+
+    <!-- Achievement Popup -->
+    <div class="achievement-popup" id="achievement-popup">
+        <div class="achievement-icon">🏆</div>
+        <div>
+            <h4>Achievement Unlocked!</h4>
+            <p id="achievement-text">You've mastered a new concept!</p>
+        </div>
+    </div>
+
+    <script>
+        // Global variables
+        let progress = 0;
+        let visitedSections = new Set();
+        let favorites = JSON.parse(localStorage.getItem('favorites') || '[]');
+        let currentSlide = 0;
+
+        // Initialize on load
+        window.addEventListener('load', function() {
+            setTimeout(() => {
+                document.getElementById('loading-screen').style.opacity = '0';
+                setTimeout(() => {
+                    document.getElementById('loading-screen').style.display = 'none';
+                }, 500);
+            }, 1000);
+
+            updateProgress();
+            startCarousel();
+        });
+
+        // Search functionality
+        document.getElementById('search-input').addEventListener('input', function(e) {
+            const searchTerm = e.target.value.toLowerCase();
+            const sections = document.querySelectorAll('.section');
+            
+            sections.forEach(section => {
+                const text = section.textContent.toLowerCase();
+                if (text.includes(searchTerm)) {
+                    section.style.display = 'block';
+                    section.classList.add('active');
+                } else if (searchTerm.length > 2) {
+                    section.style.display = 'none';
+                }
+            });
+
+            if (searchTerm.length === 0) {
+                sections.forEach(section => {
+                    section.style.display = 'block';
+                    section.classList.remove('active');
+                });
+            }
+        });
+
+        // Section toggle with progress tracking
+        function toggleSection(header) {
+            const section = header.parentElement;
+            const wasActive = section.classList.contains('active');
+            section.classList.toggle('active');
+            
+            if (!wasActive) {
+                const sectionId = header.querySelector('h2').textContent;
+                if (!visitedSections.has(sectionId)) {
+                    visitedSections.add(sectionId);
+                    updateProgress();
+                    
+                    if (visitedSections.size === document.querySelectorAll('.section').length) {
+                        showAchievement('Course Master', 'You\'ve explored all sections!');
+                    }
+                }
+            }
+        }
+
+        // Progress tracking
+        function updateProgress() {
+            const totalSections = document.querySelectorAll('.section').length;
+            progress = Math.round((visitedSections.size / totalSections) * 100);
+            document.getElementById('progress-fill').style.width = progress + '%';
+            document.getElementById('progress-percent').textContent = progress + '%';
+            
+            // Save progress
+            localStorage.setItem('training-progress', progress);
+        }
+
+        // Favorites system
+        function toggleFavorite(button, sectionId) {
+            event.stopPropagation();
+            const index = favorites.indexOf(sectionId);
+            
+            if (index > -1) {
+                favorites.splice(index, 1);
+                button.classList.remove('active');
+            } else {
+                favorites.push(sectionId);
+                button.classList.add('active');
+                showAchievement('Bookmark Pro', 'You\'ve saved a favorite!');
+            }
+            
+            localStorage.setItem('favorites', JSON.stringify(favorites));
+        }
+
+        function showFavorites() {
+            const content = favorites.length > 0 
+                ? `<h3>Your Favorite Sections:</h3><ul>${favorites.map(f => `<li>${f}</li>`).join('')}</ul>`
+                : '<p>No favorites saved yet. Click the star icon on sections you want to bookmark!</p>';
+            
+            openFlyoutWithContent('My Favorites', content);
+        }
+
+        // Carousel functionality
+        function startCarousel() {
+            setInterval(() => {
+                currentSlide = (currentSlide + 1) % 3;
+                showSlide(currentSlide);
+            }, 5000);
+        }
+
+        function showSlide(index) {
+            const slides = document.querySelectorAll('.tip-slide');
+            const dots = document.querySelectorAll('.carousel-dot');
+            
+            slides.forEach(slide => slide.classList.remove('active'));
+            dots.forEach(dot => dot.classList.remove('active'));
+            
+            slides[index].classList.add('active');
+            dots[index].classList.add('active');
+            currentSlide = index;
+        }
+
+        // Calculator functionality
+        function calculateSavings() {
+            const usage = parseFloat(document.getElementById('usage').value);
+            const currentRate = parseFloat(document.getElementById('current-rate').value);
+            const fixedRate = parseFloat(document.getElementById('fixed-rate').value);
+            
+            const currentAnnual = usage * currentRate * 12;
+            const fixedAnnual = usage * fixedRate * 12;
+            const savings = currentAnnual - fixedAnnual;
+            
+            document.getElementById('savings-amount').textContent = `$${savings.toFixed(2)}`;
+            document.getElementById('calc-result').style.display = 'block';
+            
+            if (savings > 100) {
+                showAchievement('Savings Expert', `You calculated ${savings.toFixed(0)} in potential savings!`);
+            }
+        }
+
+        // Market updates
+        function showMarketUpdate(timeframe) {
+            const updates = {
+                'today': `
+                    <h4>📊 Today's Market Snapshot</h4>
+                    <p><strong>Henry Hub:</strong> $3.45/MMBtu (↑ 0.12 from yesterday)</p>
+                    <p><strong>Key Driver:</strong> Cold front moving into Northeast</p>
+                    <p><strong>Storage:</strong> 2.8 TCF (5% below 5-year average)</p>
+                    <p><strong>Outlook:</strong> Prices expected to remain elevated through week</p>
+                `,
+                'week': `
+                    <h4>📈 Weekly Trend Analysis</h4>
+                    <p><strong>Week Start:</strong> $3.28/MMBtu</p>
+                    <p><strong>Current:</strong> $3.45/MMBtu (+5.2%)</p>
+                    <p><strong>Volatility:</strong> High - Weather-driven demand</p>
+                    <p><strong>LNG Exports:</strong> 12.8 Bcf/day (near record)</p>
+                `,
+                'outlook': `
+                    <h4>🔮 30-Day Outlook</h4>
+                    <p><strong>Forecast Range:</strong> $3.20 - $3.80/MMBtu</p>
+                    <p><strong>Weather Impact:</strong> La Niña pattern suggests colder winter</p>
+                    <p><strong>Storage Projection:</strong> Could hit critically low levels by February</p>
+                    <p><strong>Recommendation:</strong> Fixed rates offer protection from volatility</p>
+                `
+            };
+            
+            document.getElementById('market-display').innerHTML = updates[timeframe];
+        }
+
+        // Scenario simulator
+        function startScenario(type) {
+            const scenarios = {
+                'angry': {
+                    customer: "This is ridiculous! My bill went from $150 to $280! You people are thieves!",
+                    tips: [
+                        "Acknowledge their frustration immediately",
+                        "Don't take it personally",
+                        "Focus on finding solutions",
+                        "Offer specific help options"
+                    ],
+                    response: "I completely understand your frustration, and I'd be upset too if my bill nearly doubled. Let me look at your account right away to understand what happened and find ways to help you."
+                },
+                'confused': {
+                    customer: "I don't understand any of this. What's a therm? Why does the price keep changing?",
+                    tips: [
+                        "Use simple analogies",
+                        "Break down concepts step by step",
+                        "Check for understanding",
+                        "Be patient and encouraging"
+                    ],
+                    response: "I'm happy to explain! Think of a therm like a gallon of gas for your car - it's just how we measure natural gas. The price changes based on supply and demand, just like gasoline prices at the pump."
+                },
+                'shopping': {
+                    customer: "I got a flyer from another company offering $0.59/therm. Why should I stay with SCANA?",
+                    tips: [
+                        "Don't badmouth competitors",
+                        "Focus on value, not just price",
+                        "Highlight SCANA's advantages",
+                        "Ask about their priorities"
+                    ],
+                    response: "I appreciate you giving us a chance to keep your business. While that rate might look attractive, let me show you the full picture of what SCANA Energy offers, including our price protection options and customer service benefits."
+                },
+                'technical': {
+                    customer: "Explain to me how basis differentials and Henry Hub pricing affect my rate in Georgia.",
+                    tips: [
+                        "Match their technical level",
+                        "Provide detailed explanations",
+                        "Use specific examples",
+                        "Offer additional resources"
+                    ],
+                    response: "Great question! Henry Hub is the benchmark, but Georgia's basis differential - the regional price difference - is affected by pipeline capacity, local demand, and distance from supply sources. Currently, our basis is running about $0.15-0.20 above Henry Hub due to high Southeast demand."
+                }
+            };
+            
+            const scenario = scenarios[type];
+            const display = document.getElementById('scenario-display');
+            
+            display.innerHTML = `
+                <div class="script-box">
+                    <h4>Customer Says:</h4>
+                    <p style="font-style: italic;">"${scenario.customer}"</p>
+                </div>
+                <div class="tip-box">
+                    <h4>Key Tips:</h4>
+                    <ul>
+                        ${scenario.tips.map(tip => `<li>${tip}</li>`).join('')}
+                    </ul>
+                </div>
+                <div class="script-box" style="background: #e8f5e9;">
+                    <h4>Recommended Response:</h4>
+                    <p>"${scenario.response}"</p>
+                </div>
+                <button class="demo-button" onclick="practiceResponse('${type}')" style="margin-top: 15px;">Practice Your Response</button>
+            `;
+        }
+
+        // Quiz functionality
+        function checkAnswer(option, isCorrect) {
+            const options = option.parentElement.querySelectorAll('.quiz-option');
+            options.forEach(opt => {
+                opt.onclick = null;
+                opt.style.cursor = 'default';
+            });
+            
+            if (isCorrect) {
+                option.classList.add('correct');
+                showAchievement('Quiz Master', 'Correct answer! You\'re learning fast!');
+            } else {
+                option.classList.add('incorrect');
+                // Find and highlight correct answer
+                options.forEach(opt => {
+                    if (opt.textContent.includes('wholesale prices')) {
+                        opt.classList.add('correct');
+                    }
+                });
+            }
+            
+            document.getElementById('next-question').style.display = 'block';
+        }
+
+        function nextQuestion() {
+            // In a real implementation, this would load the next question
+            alert('More quiz questions coming soon!');
+        }
+
+        // Achievement system
+        function showAchievement(title, text) {
+            const popup = document.getElementById('achievement-popup');
+            document.getElementById('achievement-text').textContent = text;
+            popup.classList.add('show');
+            
+            setTimeout(() => {
+                popup.classList.remove('show');
+            }, 3000);
+        }
+
+        // Enhanced flyout functionality
+        function openFlyout(contentId) {
+            const flyout = document.getElementById('flyout-panel');
+            const overlay = document.querySelector('.overlay');
+            const title = document.getElementById('flyout-title');
+            const content = document.getElementById('flyout-content');
+
+            const contentData = getFlyoutContent(contentId);
+            title.textContent = contentData.title;
+            content.innerHTML = contentData.content;
+
+            flyout.classList.add('active');
+            overlay.classList.add('active');
+
+            // Track flyout views
+            if (!visitedSections.has(contentId)) {
+                visitedSections.add(contentId);
+                updateProgress();
+            }
+        }
+
+        function openFlyoutWithContent(title, content) {
+            const flyout = document.getElementById('flyout-panel');
+            const overlay = document.querySelector('.overlay');
+            document.getElementById('flyout-title').textContent = title;
+            document.getElementById('flyout-content').innerHTML = content;
+
+            flyout.classList.add('active');
+            overlay.classList.add('active');
+        }
+
+        function closeFlyout() {
+            const flyout = document.getElementById('flyout-panel');
+            const overlay = document.querySelector('.overlay');
+            flyout.classList.remove('active');
+            overlay.classList.remove('active');
+        }
+
+        // Comprehensive flyout content
+        function getFlyoutContent(id) {
+            const content = {
+                'gas-production': {
+                    title: '🏭 Natural Gas Production Deep Dive',
+                    content: `
+                        <h3>Understanding the Source of Natural Gas</h3>
+                        
+                        <div class="script-box">
+                            <h4>The 30-Second Explanation:</h4>
+                            <p>"Natural gas comes from wells drilled deep underground, mainly in Texas, Pennsylvania, and North Dakota. The U.S. produces so much gas that we're now the world's largest producer - but that doesn't mean it's always cheap, because we also export a lot of it."</p>
+                        </div>
+
+                        <h4>Production Methods:</h4>
+                        <ul>
+                            <li><strong>Conventional Wells:</strong> Traditional vertical drilling</li>
+                            <li><strong>Hydraulic Fracturing (Fracking):</strong> Horizontal drilling with water pressure</li>
+                            <li><strong>Associated Gas:</strong> Byproduct of oil production</li>
+                        </ul>
+
+                        <div class="tip-box">
+                            <h4>Key Statistics to Share:</h4>
+                            <ul>
+                                <li>U.S. produces ~40 trillion cubic feet annually</li>
+                                <li>Marcellus Shale (PA/WV) is largest producing region</li>
+                                <li>Production costs range from $2-4/MMBtu</li>
+                                <li>Weather can shut down 10-20% of production</li>
+                            </ul>
+                        </div>
+
+                        <div class="warning-box">
+                            <h4>Common Misconceptions:</h4>
+                            <ul>
+                                <li>"More production always means lower prices" - FALSE: Exports and demand matter too</li>
+                                <li>"Gas companies control production" - FALSE: Producers and marketers are different</li>
+                                <li>"All gas is the same" - FALSE: Quality and heating value vary</li>
+                            </ul>
+                        </div>
+
+                        <h4>How Weather Affects Production:</h4>
+                        <p>Extreme cold can freeze wellheads and processing equipment, reducing supply when demand is highest. This is called "freeze-offs" and can remove billions of cubic feet from daily production.</p>
+
+                        <div class="script-box">
+                            <h4>Customer Talking Points:</h4>
+                            <p>"While the U.S. produces a lot of natural gas, several factors affect what you pay:"</p>
+                            <ul>
+                                <li>Transportation from production areas to Georgia</li>
+                                <li>Competition from other states and countries for that gas</li>
+                                <li>Weather impacts on both production and demand</li>
+                                <li>Infrastructure constraints and maintenance</li>
+                            </ul>
+                        </div>
+                    `
+                },
+                'wholesale-market': {
+                    title: '📈 Mastering Wholesale Market Dynamics',
+                    content: `
+                        <h3>The Heart of Natural Gas Pricing</h3>
+                        
+                        <div class="script-box">
+                            <h4>Simple Customer Explanation:</h4>
+                            <p>"Think of the wholesale natural gas market like the stock market, but for energy. Prices change every day based on supply, demand, weather forecasts, and global events. SCANA Energy buys gas from this market to deliver to you."</p>
+                        </div>
+
+                        <h4>Key Market Drivers:</h4>
+                        
+                        <div style="background: #f0f7ff; padding: 20px; border-radius: 10px; margin: 15px 0;">
+                            <h5>📊 Supply Factors:</h5>
+                            <ul>
+                                <li>Production levels and disruptions</li>
+                                <li>Pipeline capacity and maintenance</li>
+                                <li>Storage inventory levels</li>
+                                <li>Import/Export volumes (especially LNG)</li>
+                            </ul>
+                        </div>
+
+                        <div style="background: #fff7e6; padding: 20px; border-radius: 10px; margin: 15px 0;">
+                            <h5>📈 Demand Factors:</h5>
+                            <ul>
+                                <li>Weather (heating/cooling degree days)</li>
+                                <li>Industrial consumption</li>
+                                <li>Power generation needs</li>
+                                <li>Economic activity levels</li>
+                            </ul>
+                        </div>
+
+                        <div class="tip-box">
+                            <h4>Real-Time Market Intelligence:</h4>
+                            <p>Current factors affecting prices:</p>
+                            <ul>
+                                <li>🌡️ <strong>Weather:</strong> 15% colder than normal forecast</li>
+                                <li>🚢 <strong>LNG Exports:</strong> Record high at 13 Bcf/day</li>
+                                <li>📦 <strong>Storage:</strong> 8% below 5-year average</li>
+                                <li>🏭 <strong>Production:</strong> Stable at 102 Bcf/day</li>
+                            </ul>
+                        </div>
+
+                        <h4>Understanding Price Volatility:</h4>
+                        <div class="mini-chart">
+                            <div class="chart-line"></div>
+                        </div>
+                        <p>Daily price swings of 5-10% are common. During extreme weather, prices can double or triple within days.</p>
+
+                        <div class="script-box">
+                            <h4>Addressing Volatility Concerns:</h4>
+                            <p>"Natural gas prices can change dramatically, sometimes within hours. That's why we offer fixed-rate plans - they protect you from these market swings. With a fixed rate, you don't have to worry about your heating bill doubling during a cold snap."</p>
+                        </div>
+
+                        <div class="warning-box">
+                            <h4>Key Point for Agents:</h4>
+                            <p>Never promise future price decreases. The market is unpredictable, and customers need honest guidance about price risks.</p>
+                        </div>
+                    `
+                },
+                'fixed-rate-advanced': {
+                    title: '🔒 Fixed-Rate Plans: Advanced Selling Techniques',
+                    content: `
+                        <h3>Becoming a Fixed-Rate Expert</h3>
+                        
+                        <div class="script-box">
+                            <h4>The Perfect Pitch:</h4>
+                            <p>"A fixed-rate plan is like locking in your mortgage rate. You know exactly what you'll pay per therm for the entire contract period, whether that's 6, 12, or 24 months. Even if market prices spike during a polar vortex, your rate stays the same."</p>
+                        </div>
+
+                        <h4>Understanding Customer Psychology:</h4>
+                        <div style="display: grid; gap: 15px;">
+                            <div style="background: #e8f5e9; padding: 15px; border-radius: 10px;">
+                                <strong>Security Seekers (60% of customers):</strong>
+                                <p>Value predictability over potential savings. Lead with budget certainty and protection.</p>
+                            </div>
+                            <div style="background: #fff3e0; padding: 15px; border-radius: 10px;">
+                                <strong>Risk-Averse (25% of customers):</strong>
+                                <p>Fear bill shock more than missing savings. Emphasize worst-case scenario protection.</p>
+                            </div>
+                            <div style="background: #f3e5f5; padding: 15px; border-radius: 10px;">
+                                <strong>Budget-Conscious (15% of customers):</strong>
+                                <p>Need to plan expenses carefully. Show how fixed rates enable better budgeting.</p>
+                            </div>
+                        </div>
+
+                        <h4>Overcoming Common Objections:</h4>
+                        
+                        <div class="tip-box">
+                            <h5>Objection: "The fixed rate seems high right now."</h5>
+                            <p><strong>Response:</strong> "You're right that it might seem higher than today's variable rate. But remember last winter when variable rates spiked to $1.20/therm? Customers on fixed rates saved hundreds of dollars. It's insurance against price spikes."</p>
+                        </div>
+
+                        <div class="tip-box">
+                            <h5>Objection: "What if prices go down?"</h5>
+                            <p><strong>Response:</strong> "That's a fair concern. However, in the last 5 years, winter prices have exceeded our current fixed rate 73% of the time. Plus, the peace of mind knowing your exact costs is valuable for most customers."</p>
+                        </div>
+
+                        <div class="tip-box">
+                            <h5>Objection: "I don't like contracts."</h5>
+                            <p><strong>Response:</strong> "I understand. Think of it less as a contract and more as a price guarantee. You're not locked in - you can leave anytime, though there may be an early termination fee. But that fee is often less than what you'd save during just one price spike."</p>
+                        </div>
+
+                        <h4>Fixed Rate Success Stories:</h4>
+                        <div class="script-box" style="background: #e8f5e9;">
+                            <p>"Last February, when that arctic blast hit, our variable rate customers saw rates jump to $1.35/therm. But Mrs. Johnson from Marietta? She was locked in at $0.79/therm. She saved $168 that month alone."</p>
+                        </div>
+
+                        <h4>The Math That Sells:</h4>
+                        <table style="width: 100%; border-collapse: collapse; margin: 15px 0;">
+                            <tr style="background: #f0f7ff;">
+                                <th style="padding: 10px; border: 1px solid #ddd;">Scenario</th>
+                                <th style="padding: 10px; border: 1px solid #ddd;">Variable Customer</th>
+                                <th style="padding: 10px; border: 1px solid #ddd;">Fixed Customer</th>
+                            </tr>
+                            <tr>
+                                <td style="padding: 10px; border: 1px solid #ddd;">Normal Month (100 therms)</td>
+                                <td style="padding: 10px; border: 1px solid #ddd;">$75</td>
+                                <td style="padding: 10px; border: 1px solid #ddd;">$79</td>
+                            </tr>
+                            <tr>
+                                <td style="padding: 10px; border: 1px solid #ddd;">Cold Snap Month (150 therms)</td>
+                                <td style="padding: 10px; border: 1px solid #ddd;">$202.50</td>
+                                <td style="padding: 10px; border: 1px solid #ddd;">$118.50</td>
+                            </tr>
+                            <tr style="background: #e8f5e9;">
+                                <td style="padding: 10px; border: 1px solid #ddd;"><strong>Savings with Fixed</strong></td>
+                                <td colspan="2" style="padding: 10px; border: 1px solid #ddd; text-align: center;"><strong>$84 in one month!</strong></td>
+                            </tr>
+                        </table>
+
+                        <div class="warning-box">
+                            <h4>Compliance Reminder:</h4>
+                            <ul>
+                                <li>Always disclose early termination fees</li>
+                                <li>Don't guarantee specific savings amounts</li>
+                                <li>Mention that usage still affects total bills</li>
+                                <li>Provide written terms if requested</li>
+                            </ul>
+                        </div>
+                    `
+                },
+                'high-bills-complete': {
+                    title: 'Mastering the "High Bill Despite Low News Prices" Conversation',
+                    content: `
+                        <h3>The Most Common Customer Complaint - Solved</h3>
+                        
+                        <div class="script-box">
+                            <h4>The Gold Standard Response:</h4>
+                            <p>"I completely understand your confusion - this is actually our most common question, and it's a great one. The price you see in the news is like the wholesale price of coffee beans, but your bill is like the price of a latte at Starbucks. Let me break down exactly what goes into your rate..."</p>
+                        </div>
+
+                        <h4>The Price Component Breakdown:</h4>
+                        <div style="background: linear-gradient(to right, #f0f7ff, #ffffff); padding: 20px; border-radius: 15px; margin: 20px 0;">
+                            <h5>Your Customer's Rate Includes:</h5>
+                            <ol>
+                                <li><strong>Commodity Cost (Henry Hub):</strong> ~40-50% of total</li>
+                                <li><strong>Interstate Transportation:</strong> ~20-25%</li>
+                                <li><strong>Local Distribution:</strong> ~15-20%</li>
+                                <li><strong>Storage & Balancing:</strong> ~5-10%</li>
+                                <li><strong>Taxes & Fees:</strong> ~5-8%</li>
+                                <li><strong>Marketer Margin:</strong> ~3-5%</li>
+                            </ol>
+                        </div>
+
+                        <div class="tip-box">
+                            <h4>Powerful Analogies That Work:</h4>
+                            <ul>
+                                <li><strong>Pizza Analogy:</strong> "The news shows the price of flour, but your bill includes making the pizza, delivering it, and keeping it hot."</li>
+                                <li><strong>Airline Analogy:</strong> "It's like fuel prices vs. airline tickets - fuel is just one part of what you pay."</li>
+                                <li><strong>Gasoline Analogy:</strong> "Oil might be $70/barrel, but you still pay $3.50/gallon at the pump."</li>
+                            </ul>
+                        </div>
+
+                        <h4>Advanced Explanation Techniques:</h4>
+                        
+                        <div class="script-box" style="background: #e8f5e9;">
+                            <h5>For Analytical Customers:</h5>
+                            <p>"Let me show you the math. If Henry Hub is at $3.00/MMBtu, that's about $0.30/therm. But by the time we add interstate pipeline charges ($0.15), local distribution ($0.12), storage ($0.05), and other costs, your delivered price is around $0.75/therm. The news only reports that first number."</p>
+                        </div>
+
+                        <div class="script-box" style="background: #fff3e0;">
+                            <h5>For Visual Learners:</h5>
+                            <p>"Imagine a road trip from Texas (where the gas is) to your home. You pay for the gas, the truck, the driver, the highways, and the local roads. The news only talks about the gas price, not the whole journey."</p>
+                        </div>
+
+                        <div class="script-box" style="background: #f3e5f5;">
+                            <h5>For Skeptical Customers:</h5>
+                            <p>"I know it seems unfair, but these aren't made-up charges. The Pipeline and Hazardous Materials Safety Administration regulates pipeline rates. The Georgia Public Service Commission oversees distribution. Every charge has regulatory oversight."</p>
+                        </div>
+
+                        <h4>Handling Escalation:</h4>
+                        <div class="warning-box">
+                            <p>If customer remains upset: "I understand this is frustrating. Let me pull up your specific bill and show you exactly where each charge comes from. I can also discuss options to help manage these costs going forward."</p>
+                        </div>
+
+                        <h4>Turning Complaints into Opportunities:</h4>
+                        <ol>
+                            <li><strong>Acknowledge:</strong> "You're absolutely right to question this."</li>
+                            <li><strong>Educate:</strong> Use the explanations above</li>
+                            <li><strong>Pivot to Solutions:</strong> "Now that you understand why prices can spike, let me show you how a fixed rate protects you..."</li>
+                            <li><strong>Close with Value:</strong> "Which would give you more peace of mind - knowing your exact rate or riding the market waves?"</li>
+                        </ol>
+
+                        <div class="tip-box">
+                            <h4>Success Metrics:</h4>
+                            <p>Agents who master this explanation see:</p>
+                            <ul>
+                                <li>68% reduction in escalations</li>
+                                <li>45% increase in fixed-rate conversions</li>
+                                <li>32% improvement in customer satisfaction scores</li>
+                            </ul>
+                        </div>
+                    `
+                },
+                'competitor-comparison': {
+                    title: '🥊 Winning the Competition Conversation',
+                    content: `
+                        <h3>Turn Competitive Threats into Retention Wins</h3>
+                        
+                        <div class="warning-box">
+                            <h4>Golden Rule:</h4>
+                            <p>Never badmouth competitors. Focus on SCANA Energy's unique value proposition.</p>
+                        </div>
+
+                        <div class="script-box">
+                            <h4>The Championship Response:</h4>
+                            <p>"I appreciate you sharing that with me, and I'm glad you're comparing options - that's smart shopping! Let me show you the full picture so you can make the best decision for your needs. That advertised rate might not tell the whole story..."</p>
+                        </div>
+
+                        <h4>Competitor Tactics Decoded:</h4>
+                        
+                        <div style="background: #ffe6e6; padding: 20px; border-radius: 10px; margin: 15px 0;">
+                            <h5>🚨 Teaser Rates:</h5>
+                            <ul>
+                                <li>Advertised rate only for first 1-2 months</li>
+                                <li>Automatic renewal at much higher rates</li>
+                                <li>Hidden monthly fees not in advertised price</li>
+                            </ul>
+                            <p><strong>Your Counter:</strong> "That's a promotional rate. After 2 months, it jumps to $0.89/therm. Our rate stays consistent."</p>
+                        </div>
+
+                        <div style="background: #fff7e6; padding: 20px; border-radius: 10px; margin: 15px 0;">
+                            <h5>⚠️ Hidden Fees:</h5>
+                            <ul>
+                                <li>Monthly service charges ($5-15)</li>
+                                <li>Connection/disconnection fees</li>
+                                <li>Paper billing charges</li>
+                            </ul>
+                            <p><strong>Your Counter:</strong> "When you add their $9.95 monthly fee, their effective rate is actually higher than ours."</p>
+                        </div>
+
+                        <div style="background: #f0f7ff; padding: 20px; border-radius: 10px; margin: 15px 0;">
+                            <h5>📋 Fine Print Tricks:</h5>
+                            <ul>
+                                <li>Automatic renewal clauses</li>
+                                <li>Variable rate after initial period</li>
+                                <li>Cancellation penalties</li>
+                            </ul>
+                            <p><strong>Your Counter:</strong> "Check if that rate is guaranteed for the full term. Many competitors switch you to variable rates automatically."</p>
+                        </div>
+
+                        <h4>SCANA Energy Advantages Arsenal:</h4>
+                        
+                        <div class="tip-box">
+                            <h5>✅ Our Unbeatable Value Props:</h5>
+                            <ol>
+                                <li><strong>20+ Years of Trust:</strong> "We've been serving Georgia since deregulation began."</li>
+                                <li><strong>No Hidden Fees:</strong> "Our advertised rate is what you pay - no surprises."</li>
+                                <li><strong>Local Customer Service:</strong> "You're talking to me in Georgia, not a call center overseas."</li>
+                                <li><strong>Flexible Options:</strong> "We have plans for every budget and preference."</li>
+                                <li><strong>Easy Account Management:</strong> "Online tools, autopay, budget billing available."</li>
+                                <li><strong>Community Investment:</strong> "We support local Georgia communities and charities."</li>
+                            </ol>
+                        </div>
+
+                        <h4>Competitive Intelligence Brief:</h4>
+                        
+                        <table style="width: 100%; border-collapse: collapse; margin: 20px 0;">
+                            <tr style="background: #667eea; color: white;">
+                                <th style="padding: 10px;">Competitor</th>
+                                <th style="padding: 10px;">Their Tactic</th>
+                                <th style="padding: 10px;">Your Response</th>
+                            </tr>
+                            <tr>
+                                <td style="padding: 10px; border: 1px solid #ddd;">Company A</td>
+                                <td style="padding: 10px; border: 1px solid #ddd;">Low teaser rates</td>
+                                <td style="padding: 10px; border: 1px solid #ddd;">Point out rate increases after promo period</td>
+                            </tr>
+                            <tr style="background: #f8f9ff;">
+                                <td style="padding: 10px; border: 1px solid #ddd;">Company B</td>
+                                <td style="padding: 10px; border: 1px solid #ddd;">Gift card offers</td>
+                                <td style="padding: 10px; border: 1px solid #ddd;">Calculate true cost including higher rates</td>
+                            </tr>
+                            <tr>
+                                <td style="padding: 10px; border: 1px solid #ddd;">Company C</td>
+                                <td style="padding: 10px; border: 1px solid #ddd;">"Green" energy claims</td>
+                                <td style="padding: 10px; border: 1px solid #ddd;">All gas from same pipelines; focus on service</td>
+                            </tr>
+                        </table>
+
+                        <h4>The Retention Close:</h4>
+                        
+                        <div class="script-box" style="background: #e8f5e9;">
+                            <h4>Sealing the Deal:</h4>
+                            <p>"I understand the appeal of shopping around, and I respect that. Here's what I can do for you as a valued SCANA Energy customer: [Offer retention deal if available]. Plus, you keep all the benefits of our superior service. What matters most to you - the lowest possible rate or reliable service with a company you can trust?"</p>
+                        </div>
+
+                        <div class="warning-box">
+                            <h4>When to Escalate:</h4>
+                            <ul>
+                                <li>Customer insists on canceling despite retention efforts</li>
+                                <li>Competitor offering seems too good to be true (possible scam)</li>
+                                <li>Customer mentions filing complaints</li>
+                            </ul>
+                        </div>
+                    `
+                },
+                'objection-handling': {
+                    title: '🛡️ Master Objection Handler Certification',
+                    content: `
+                        <h3>Transform Every "No" into a "Yes"</h3>
+                        
+                        <div class="tip-box">
+                            <h4>The Psychology of Objections:</h4>
+                            <p>Objections are not rejections - they're requests for more information. Master agents see objections as opportunities to build trust and demonstrate expertise.</p>
+                        </div>
+
+                        <h4>The LEAP Method for Objection Handling:</h4>
+                        
+                        <div style="display: grid; gap: 15px; margin: 20px 0;">
+                            <div style="background: linear-gradient(135deg, #e8f5e9, #f1f8e9); padding: 20px; border-radius: 10px;">
+                                <h5>L - Listen Fully</h5>
+                                <p>Let them finish completely. Don't interrupt. Show you're listening with verbal cues: "I see," "Go on," "Tell me more."</p>
+                            </div>
+                            <div style="background: linear-gradient(135deg, #e3f2fd, #f3f4ff); padding: 20px; border-radius: 10px;">
+                                <h5>E - Empathize Genuinely</h5>
+                                <p>"I completely understand why you'd feel that way." "That's a valid concern that many customers share."</p>
+                            </div>
+                            <div style="background: linear-gradient(135deg, #fff3e0, #fff8e1); padding: 20px; border-radius: 10px;">
+                                <h5>A - Ask Clarifying Questions</h5>
+                                <p>"Help me understand - is your main concern the monthly cost or the total annual expense?" "What specifically worries you about..."</p>
+                            </div>
+                            <div style="background: linear-gradient(135deg, #fce4ec, #fff0f4); padding: 20px; border-radius: 10px;">
+                                <h5>P - Provide Solutions</h5>
+                                <p>Address their specific concern with targeted solutions. Don't give generic responses.</p>
+                            </div>
+                        </div>
+
+                        <h4>Top 10 Objections & Championship Responses:</h4>
+                        
+                        <div class="script-box">
+                            <h5>1. "It's too expensive."</h5>
+                            <p><strong>Response:</strong> "I understand price is important. Let's look at your actual usage and find a plan that fits your budget. Many customers find they save money by avoiding winter price spikes with our fixed rates. What's your typical monthly budget for gas?"</p>
+                        </div>
+
+                        <div class="script-box">
+                            <h5>2. "I need to think about it."</h5>
+                            <p><strong>Response:</strong> "Of course! This is an important decision. What specific information would help you make the best choice? I'm here to answer any questions. Also, rates can change daily - if this current rate works for your budget, we can lock it in now and you have 3 days to cancel if you change your mind."</p>
+                        </div>
+
+                        <div class="script-box">
+                            <h5>3. "I don't trust energy companies."</h5>
+                            <p><strong>Response:</strong> "I completely understand - trust has to be earned. That's why we've been in business for over 20 years with an A+ BBB rating. We're regulated by the Georgia Public Service Commission. What specific concerns do you have that I can address?"</p>
+                        </div>
+
+                        <div class="script-box">
+                            <h5>4. "I'm switching to electric."</h5>
+                            <p><strong>Response:</strong> "That's interesting! Many customers consider that. Have you compared the costs? Natural gas is typically 3-4 times more efficient for heating than electric. A gas furnace costs about $600/year to run versus $1,800 for electric heat pumps in Georgia. Would you like to see the comparison?"</p>
+                        </div>
+
+                        <div class="script-box">
+                            <h5>5. "Your rates always go up."</h5>
+                            <p><strong>Response:</strong> "I hear your frustration. Market rates do fluctuate - that's exactly why we created fixed-rate plans. You can lock in today's rate for 12 months and not worry about increases. In fact, last winter our fixed-rate customers saved an average of $200 versus variable rates."</p>
+                        </div>
+
+                        <h4>Advanced Objection Techniques:</h4>
+                        
+                        <div class="tip-box">
+                            <h4>The "Feel, Felt, Found" Method:</h4>
+                            <p>"I understand how you <strong>feel</strong>. Other customers have <strong>felt</strong> the same way. What they <strong>found</strong> was that [insert benefit]."</p>
+                            <p><strong>Example:</strong> "I understand how you feel about contracts. Other customers felt the same way. What they found was that the savings during price spikes more than made up for any commitment concerns."</p>
+                        </div>
+
+                        <div class="tip-box">
+                            <h4>The Boomerang Technique:</h4>
+                            <p>Turn their objection into a reason to buy.</p>
+                            <p><strong>Objection:</strong> "The fixed rate is higher than variable."</p>
+                            <p><strong>Boomerang:</strong> "You're absolutely right - it is higher today. That's exactly why it's valuable. You're paying a small premium now to avoid paying a huge premium during winter price spikes."</p>
+                        </div>
+
+                        <h4>Body Language & Tone Tips:</h4>
+                        <ul>
+                            <li>Lower your voice slightly when addressing concerns - it shows confidence</li>
+                            <li>Pause after they object - don't rush to respond</li>
+                            <li>Match their pace - speak slower for cautious customers</li>
+                            <li>Use their name when providing solutions</li>
+                            <li>Smile while talking - they can hear it in your voice</li>
+                        </ul>
+
+                        <div class="warning-box">
+                            <h4>Objections That Signal Deeper Issues:</h4>
+                            <ul>
+                                <li>"I can't afford any utilities" → Offer payment assistance programs</li>
+                                <li>"I'm moving soon" → Discuss short-term options or transfer services</li>
+                                <li>"I had a bad experience" → Escalate to retention specialist</li>
+                                <li>"I don't understand any of this" → Slow down, simplify, use analogies</li>
+                            </ul>
+                        </div>
+
+                        <h4>Practice Scenarios:</h4>
+                        <div class="demo-section">
+                            <button class="demo-button" onclick="practiceObjection('price')">Practice Price Objection</button>
+                            <button class="demo-button" onclick="practiceObjection('trust')">Practice Trust Objection</button>
+                            <button class="demo-button" onclick="practiceObjection('contract')">Practice Contract Objection</button>
+                        </div>
+                    `
+                },
+                'closing-techniques': {
+                    title: '🎯 Elite Closing Techniques',
+                    content: `
+                        <h3>The Art & Science of Securing Commitment</h3>
+                        
+                        <div class="tip-box">
+                            <h4>The Closer's Mindset:</h4>
+                            <p>You're not "selling" - you're helping customers protect themselves from price volatility. Every close is an opportunity to provide value and peace of mind.</p>
+                        </div>
+
+                        <h4>The 7 Power Closes for Natural Gas:</h4>
+                        
+                        <div class="script-box" style="background: #e8f5e9;">
+                            <h5>1. The Assumptive Close</h5>
+                            <p><strong>Setup:</strong> After explaining benefits...</p>
+                            <p><strong>Close:</strong> "So I'll get you started with the 12-month fixed rate at $0.75/therm. I just need to confirm your service address is still 123 Main Street?"</p>
+                            <p><strong>Why it works:</strong> Assumes they're ready and makes it easy to say yes.</p>
+                        </div>
+
+                        <div class="script-box" style="background: #f0f7ff;">
+                            <h5>2. The Urgency Close</h5>
+                            <p><strong>Setup:</strong> "Just so you know..."</p>
+                            <p><strong>Close:</strong> "This rate is based on today's market conditions. Tomorrow it could be 2-3 cents higher. If this rate works for your budget, I can lock it in for the next 12 months right now."</p>
+                            <p><strong>Why it works:</strong> Creates legitimate urgency without being pushy.</p>
+                        </div>
+
+                        <div class="script-box" style="background: #fff3e0;">
+                            <h5>3. The Alternative Choice Close</h5>
+                            <p><strong>Setup:</strong> Present two options...</p>
+                            <p><strong>Close:</strong> "Based on what you've told me, either the 12-month fixed at $0.75 or the 6-month at $0.78 would work well. Which term gives you more comfort?"</p>
+                            <p><strong>Why it works:</strong> The choice becomes "which one" not "yes or no."</p>
+                        </div>
+
+                        <div class="script-box" style="background: #fce4ec;">
+                            <h5>4. The Summary Close</h5>
+                            <p><strong>Setup:</strong> Recap their needs...</p>
+                            <p><strong>Close:</strong> "So you want predictable bills, protection from winter spikes, and no surprise charges. This fixed-rate plan delivers all three. Shall we get you protected?"</p>
+                            <p><strong>Why it works:</strong> Reminds them why they called and how you solve their problems.</p>
+                        </div>
+
+                        <div class="script-box" style="background: #f3e5f5;">
+                            <h5>5. The Savings Close</h5>
+                            <p><strong>Setup:</strong> After calculating...</p>
+                            <p><strong>Close:</strong> "Based on last winter's prices, this plan would have saved you $247. That's like getting two months free. Should we lock in those savings?"</p>
+                            <p><strong>Why it works:</strong> Makes the value tangible and immediate.</p>
+                        </div>
+
+                        <div class="script-box" style="background: #e1f5fe;">
+                            <h5>6. The Risk Reversal Close</h5>
+                            <p><strong>Setup:</strong> Address their hesitation...</p>
+                            <p><strong>Close:</strong> "I understand you're cautious. Here's the good news - you have a 3-day right of reconsideration. If you change your mind for any reason, just call us. But this locks in your rate protection starting today. Fair enough?"</p>
+                            <p><strong>Why it works:</strong> Removes the fear of making a mistake.</p>
+                        </div>
+
+                        <div class="script-box" style="background: #efebe9;">
+                            <h5>7. The Testimonial Close</h5>
+                            <p><strong>Setup:</strong> Share a story...</p>
+                            <p><strong>Close:</strong> "Just yesterday, I had a customer thank me for putting them on a fixed rate last fall. They saved over $300 during the winter. I'd love to help you save money too. Ready to get started?"</p>
+                            <p><strong>Why it works:</strong> Social proof reduces anxiety.</p>
+                        </div>
+
+                        <h4>Reading Buying Signals:</h4>
+                        
+                        <div class="tip-box">
+                            <h5>🟢 Green Light Signals (Close Now!):</h5>
+                            <ul>
+                                <li>"How long would I be locked in?"</li>
+                                <li>"What exactly is included in that rate?"</li>
+                                <li>"So I'd pay $X per month?"</li>
+                                <li>"Can I change my mind?"</li>
+                                <li>"When would this start?"</li>
+                            </ul>
+                        </div>
+
+                        <div class="warning-box">
+                            <h5>🟡 Yellow Light Signals (Address Concerns):</h5>
+                            <ul>
+                                <li>"I need to talk to my spouse"</li>
+                                <li>"Let me think about it"</li>
+                                <li>"I'm not sure..."</li>
+                                <li>"What if..."</li>
+                            </ul>
+                        </div>
+
+                        <h4>The Perfect Close Sequence:</h4>
+                        <ol>
+                            <li><strong>Trial Close:</strong> "How does that sound to you?"</li>
+                            <li><strong>Handle Any Objections:</strong> Use LEAP method</li>
+                            <li><strong>Confirm Understanding:</strong> "So you'll have rate protection at $0.75/therm, correct?"</li>
+                            <li><strong>Assumptive Close:</strong> "Perfect! I'll get that set up for you..."</li>
+                            <li><strong>Confirm Details:</strong> Verify account information</li>
+                            <li><strong>Set Expectations:</strong> "You'll receive confirmation within 24 hours..."</li>
+                        </ol>
+
+                        <h4>Advanced Closing Psychology:</h4>
+                        
+                        <div class="tip-box">
+                            <h4>The Power of Silence:</h4>
+                            <p>After asking for the sale, stop talking. The first person to speak often loses. Count to 5 in your head if needed.</p>
+                        </div>
+
+                        <div class="tip-box">
+                            <h4>The Commitment Ladder:</h4>
+                            <p>Get small "yes" answers throughout:</p>
+                            <ul>
+                                <li>"You want to avoid bill shock, right?" (Yes)</li>
+                                <li>"Predictable bills would help your budgeting?" (Yes)</li>
+                                <li>"Saving money this winter sounds good?" (Yes)</li>
+                                <li>"Should we get you protected with the fixed rate?" (Yes!)</li>
+                            </ul>
+                        </div>
+
+                        <div class="demo-section">
+                            <h3>Practice Your Close:</h3>
+                            <button class="demo-button" onclick="practiceClose('assumptive')">Assumptive Close</button>
+                            <button class="demo-button" onclick="practiceClose('urgency')">Urgency Close</button>
+                            <button class="demo-button" onclick="practiceClose('savings')">Savings Close</button>
+                        </div>
+                    `
+                },
+                'empathy-advanced': {
+                    title: '❤️ Emotional Intelligence Mastery',
+                    content: `
+                        <h3>Connect Deeply, Serve Completely</h3>
+                        
+                        <div class="tip-box">
+                            <h4>The Neuroscience of Connection:</h4>
+                            <p>When customers feel heard and understood, their brain releases oxytocin - the trust hormone. This literally makes them more receptive to your solutions. Empathy isn't just nice; it's scientifically proven to improve outcomes.</p>
+                        </div>
+
+                        <h4>The 5 Levels of Empathetic Response:</h4>
+                        
+                        <div style="display: grid; gap: 15px; margin: 20px 0;">
+                            <div style="background: #ffebee; padding: 20px; border-radius: 10px;">
+                                <h5>Level 1: Basic Acknowledgment ❌</h5>
+                                <p>"I understand." (Generic, overused, often sounds insincere)</p>
+                            </div>
+                            <div style="background: #fff3e0; padding: 20px; border-radius: 10px;">
+                                <h5>Level 2: Surface Empathy ⚠️</h5>
+                                <p>"I understand this is frustrating for you." (Better, but still generic)</p>
+                            </div>
+                            <div style="background: #f1f8e9; padding: 20px; border-radius: 10px;">
+                                <h5>Level 3: Specific Empathy ✓</h5>
+                                <p>"I understand why seeing your bill double would be shocking and stressful." (Addresses specific emotion)</p>
+                            </div>
+                            <div style="background: #e8f5e9; padding: 20px; border-radius: 10px;">
+                                <h5>Level 4: Personal Connection ✓✓</h5>
+                                <p>"I'd be upset too if my heating bill doubled - that really impacts the family budget." (Shows personal understanding)</p>
+                            </div>
+                            <div style="background: #c8e6c9; padding: 20px; border-radius: 10px;">
+                                <h5>Level 5: Empathy + Action ✓✓✓</h5>
+                                <p>"I can hear how stressful this bill increase is for you. Let me pull up your account right now and find ways to reduce this burden." (Combines understanding with immediate help)</p>
+                            </div>
+                        </div>
+
+                        <h4>Reading Emotional Cues:</h4>
+                        
+                        <div class="tip-box">
+                            <h5>🎭 Voice Tone Indicators:</h5>
+                            <ul>
+                                <li><strong>Rapid speech:</strong> Anxiety/anger - Slow your pace to calm them</li>
+                                <li><strong>Quiet/withdrawn:</strong> Defeat/sadness - Use warmer, encouraging tone</li>
+                                <li><strong>Loud/aggressive:</strong> Frustration - Stay calm, lower your voice</li>
+                                <li><strong>Shaky voice:</strong> Fear/worry - Be extra patient and reassuring</li>
+                                <li><strong>Sarcastic:</strong> Distrust - Be genuine and transparent</li>
+                            </ul>
+                        </div>
+
+                        <h4>Empathy Scripts for Difficult Situations:</h4>
+                        
+                        <div class="script-box">
+                            <h5>Customer in Financial Distress:</h5>
+                            <p><strong>Customer:</strong> "I can't pay this bill. I might lose my home."</p>
+                            <p><strong>Level 5 Response:</strong> "I can hear the worry in your voice, and I want you to know you're not alone. Many families are struggling right now. Let me connect you with our hardship program immediately, and we'll work out a plan that keeps your heat on while you get back on your feet. I'm going to personally make sure we help you through this."</p>
+                        </div>
+
+                        <div class="script-box">
+                            <h5>Angry About Price Increases:</h5>
+                            <p><strong>Customer:</strong> "This is highway robbery! You're taking advantage of people!"</p>
+                            <p><strong>Level 5 Response:</strong> "I hear your anger, and you have every right to be upset about these price increases. If I saw my bill jump like yours did, I'd be furious too. While I can't control market prices, I can show you exactly why this happened and more importantly, how we can protect you from this happening again. Will you give me a chance to help?"</p>
+                        </div>
+
+                        <div class="script-box">
+                            <h5>Confused Elderly Customer:</h5>
+                            <p><strong>Customer:</strong> "I don't understand any of this. It's all too complicated."</p>
+                            <p><strong>Level 5 Response:</strong> "I completely understand - these bills can be really confusing. Let's take this nice and slow, and I'll explain everything in simple terms. Think of me as your personal guide through this. We'll make sure you understand everything before we finish, okay? Let's start with your biggest concern..."</p>
+                        </div>
+
+                        <h4>The HEART Method for Deep Connection:</h4>
+                        
+                        <div style="background: linear-gradient(135deg, #fce4ec, #f8bbd0); padding: 25px; border-radius: 15px; margin: 20px 0;">
+                            <h5>H - Hear Them Completely</h5>
+                            <p>Listen without planning your response. Focus 100% on their words and emotions.</p>
+                            
+                            <h5>E - Echo Their Emotions</h5>
+                            <p>"It sounds like you're really worried about affording heat this winter."</p>
+                            
+                            <h5>A - Acknowledge Their Reality</h5>
+                            <p>"With everything costing more these days, a big utility bill is the last thing you need."</p>
+                            
+                            <h5>R - Relate Personally</h5>
+                            <p>"My own heating bill went up too - it's affecting everyone."</p>
+                            
+                            <h5>T - Take Action</h5>
+                            <p>"Let me show you three specific ways we can lower your costs starting today."</p>
+                        </div>
+
+                        <h4>Building Emotional Resilience:</h4>
+                        
+                        <div class="warning-box">
+                            <h4>Self-Care for Agents:</h4>
+                            <p>Dealing with upset customers is emotionally draining. Remember:</p>
+                            <ul>
+                                <li>Their anger isn't about you personally</li>
+                                <li>Take deep breaths between difficult calls</li>
+                                <li>Celebrate your wins, no matter how small</li>
+                                <li>Ask for support when you need it</li>
+                                <li>Remember: You're helping people in real need</li>
+                            </ul>
+                        </div>
+
+                        <h4>Empathy Power Phrases:</h4>
+                        <ul>
+                            <li>"That sounds really challenging..."</li>
+                            <li>"I can only imagine how stressful this is..."</li>
+                            <li>"Thank you for sharing this with me..."</li>
+                            <li>"You're absolutely right to be concerned..."</li>
+                            <li>"Let's work through this together..."</li>
+                            <li>"I'm here to help, not just today but going forward..."</li>
+                            <li>"Your situation is important to me..."</li>
+                        </ul>
+
+                        <div class="tip-box">
+                            <h4>The 2-Minute Investment:</h4>
+                            <p>Spending 2 extra minutes on empathy at the start saves 10 minutes of objection handling later. Customers who feel heard are 3x more likely to accept your recommendations.</p>
+                        </div>
+                    `
+                }
+            };
+
+            return content[id] || {
+                title: 'Information Coming Soon',
+                content: '<p>This content is being developed. Check back soon for comprehensive information on this topic!</p>'
+            };
+        }
+    </script>
+</body>
+</html>
